@@ -1,0 +1,75 @@
+---
+title: "Cost of living 2023"
+subtitle: "See how inflation has changed prices across the United States in the September quarter"
+author: "Isabella Velásquez"
+format:
+  dashboard:
+    orientation: columns
+theme: litera
+---
+
+```{python}
+#| include: false
+import pins
+from pins import board_connect
+import pandas as pd
+import plotly.express as px
+import altair as alt
+from dotenv import load_dotenv
+load_dotenv()
+import os 
+
+connect_server = "https://colorado.posit.co/rsc"
+connect_api_key = os.environ.get('CONNECT_API_KEY')
+
+board = board_connect(server_url=connect_server, api_key=connect_api_key)
+df = board.pin_read("isabella.velasquez/bls-cpi-data")
+```
+
+
+## Column {.sidebar}
+
+Sidebar content.
+
+## Column 
+
+### Row
+
+::: {.valuebox icon="pencil" color="blue"}
+Articles per day
+
+45
+:::
+
+::: {.valuebox icon="pencil" color="blue"}
+Articles per day
+
+45
+:::
+
+::: {.valuebox icon="pencil" color="blue"}
+Articles per day
+
+45
+:::
+
+## Row {.tabset}
+
+```{python}
+#| echo: false
+fig = px.line(df, x='Year-Month', y='value', color='Category', title='CPI Data')
+
+# Show the plot
+fig.show()
+```
+
+
+```{python}
+#| echo: false
+# Create the streamgraph
+alt.Chart(df).mark_area().encode(
+    alt.X('yearmonth(Year-Month):T').axis(format='%Y', domain=False, tickSize=0),
+    alt.Y('sum(value):Q').stack('center').axis(None),
+    alt.Color('Category:N').scale(scheme='category20b')
+).interactive()
+```
