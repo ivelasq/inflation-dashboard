@@ -128,6 +128,28 @@ df = pd.concat(dfs, ignore_index=True)
 df['Year-Month'] = df['year'] + '-' + df['period'].str[1:]
 
 df['value'] = pd.to_numeric(df['value'], errors='coerce')
+
+df['Category_Label'] = df['Category'].map(id_to_label)
+```
+
+## Transform data
+
+```{python}
+# Ensure the 'Year-Month' column is in datetime format
+df['Year-Month'] = pd.to_datetime(df['Year-Month'])
+
+# Filter the data for January 2018
+january_2018_data = df[(df['Year-Month'].dt.year == 2018) & (df['Year-Month'].dt.month == 1)]
+
+# Create a dictionary to map category labels to their January 2018 values
+january_2018_values = dict(zip(january_2018_data['Category_Label'], january_2018_data['value']))
+
+# Calculate the difference from the January 2018 values for each group
+df['Difference_from_January_2018'] = df['Category_Label'].map(january_2018_values)
+df['Difference_from_January_2018'] = df['value'] - df['Difference_from_January_2018']
+
+# Reset the index (optional)
+df = df.reset_index(drop=True)
 ```
 
 ## Save as a pin

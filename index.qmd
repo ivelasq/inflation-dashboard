@@ -2,18 +2,19 @@
 title: "Cost of living 2023"
 subtitle: "See how inflation has changed prices across the United States in the September quarter"
 author: "Isabella Velásquez"
-format:
+format: 
   dashboard:
-    orientation: columns
-theme: litera
+    theme: [litera, custom.scss]
 ---
 
 ```{python}
 #| include: false
+import markdown
 import pins
 from pins import board_connect
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 import altair as alt
 from dotenv import load_dotenv
 load_dotenv()
@@ -24,52 +25,31 @@ connect_api_key = os.environ.get('CONNECT_API_KEY')
 
 board = board_connect(server_url=connect_server, api_key=connect_api_key)
 df = board.pin_read("isabella.velasquez/bls-cpi-data")
+
+pio.templates.default = "plotly_white"
 ```
-
-
-## Column {.sidebar}
-
-Sidebar content.
-
-## Column 
-
-### Row
-
-::: {.valuebox icon="pencil" color="blue"}
-Articles per day
-
-45
-:::
-
-::: {.valuebox icon="pencil" color="blue"}
-Articles per day
-
-45
-:::
-
-::: {.valuebox icon="pencil" color="blue"}
-Articles per day
-
-45
-:::
 
 ## Row {.tabset}
 
 ```{python}
-#| echo: false
-fig = px.line(df, x='Year-Month', y='value', color='Category', title='CPI Data')
+#| include: false
+df = df.sort_values(by=['Category_Label', 'Year-Month'], ascending=[False, False])
+fig = px.line(df, x='Year-Month', y='Difference_from_January_2018', color='Category_Label', hover_name='Category_Label')
 
-# Show the plot
-fig.show()
+for d in fig['data']:
+    if d['name'] == 'All groups CPI':
+        d['line']['color'] = 'orange'
+        d['legendgroup'] = 1  # Set the legend group to ensure it remains at the forefront
+    else:
+        d['line']['color'] = 'lightgrey'
+
+fig.update_xaxes(title_text='')
+fig.update_yaxes(title_text='')
 ```
 
-
 ```{python}
-#| echo: false
-# Create the streamgraph
-alt.Chart(df).mark_area().encode(
-    alt.X('yearmonth(Year-Month):T').axis(format='%Y', domain=False, tickSize=0),
-    alt.Y('sum(value):Q').stack('center').axis(None),
-    alt.Color('Category:N').scale(scheme='category20b')
-).interactive()
+#| title: "Inflation explorer"
+from IPython.display import display, Markdown, Latex
+display(Markdown('Use this inflation data explorer to see which goods and services are getting cheaper or more expensive in the U.S.'))
+fig.show()
 ```

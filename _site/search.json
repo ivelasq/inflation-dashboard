@@ -1,0 +1,58 @@
+[
+  {
+    "objectID": "data-pull.html",
+    "href": "data-pull.html",
+    "title": "BLS CPI Data Pull",
+    "section": "",
+    "text": "import requests\nimport json\nimport pandas as pd\nimport pins\nfrom pins import board_connect\n\nfrom dotenv import load_dotenv\nload_dotenv()\nimport os \n\n# BLS API Key obtained at https://www.bls.gov/developers/home.htm\nbls_key = os.environ.get('BLS_KEY')\n\nclass c_bls_data_api:\n    \n    \"\"\"\n        File name:      c_bls_data_api.py\n        Class name:     c_bls_data_api\n        Author:         Originally by Randy Runtsch\n        Date:           October 24, 2023\n        Description:    Call BLS Data API with a query and handle the results.\n        Reference:      https://www.bls.gov/developers/api_python.htm\n    \"\"\"\n\n    def __init__(self, parameters):\n        self.data = self.get_report(parameters)\n\n    def get_report(self, parameters):\n        headers = {'Content-type': 'application/json'}\n        response = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data = parameters, headers = headers)\n        \n        if response.status_code != 200:\n            raise Exception(f'API Error: {response.status_code}')\n\n        return response.json()"
+  },
+  {
+    "objectID": "data-pull.html#bls-api-access",
+    "href": "data-pull.html#bls-api-access",
+    "title": "BLS CPI Data Pull",
+    "section": "",
+    "text": "import requests\nimport json\nimport pandas as pd\nimport pins\nfrom pins import board_connect\n\nfrom dotenv import load_dotenv\nload_dotenv()\nimport os \n\n# BLS API Key obtained at https://www.bls.gov/developers/home.htm\nbls_key = os.environ.get('BLS_KEY')\n\nclass c_bls_data_api:\n    \n    \"\"\"\n        File name:      c_bls_data_api.py\n        Class name:     c_bls_data_api\n        Author:         Originally by Randy Runtsch\n        Date:           October 24, 2023\n        Description:    Call BLS Data API with a query and handle the results.\n        Reference:      https://www.bls.gov/developers/api_python.htm\n    \"\"\"\n\n    def __init__(self, parameters):\n        self.data = self.get_report(parameters)\n\n    def get_report(self, parameters):\n        headers = {'Content-type': 'application/json'}\n        response = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data = parameters, headers = headers)\n        \n        if response.status_code != 200:\n            raise Exception(f'API Error: {response.status_code}')\n\n        return response.json()"
+  },
+  {
+    "objectID": "data-pull.html#tables",
+    "href": "data-pull.html#tables",
+    "title": "BLS CPI Data Pull",
+    "section": "Tables",
+    "text": "Tables\nList of table IDs to pull obtained at https://data.bls.gov/cgi-bin/surveymost\n\ntable_ids = ['CUUR0000SA0', 'CUUR0000SA0L1E', 'CUUR0000SAF1', 'CUUR0000SA0E', 'CUUR0000SETB01', 'CUUR0000SAM', 'CUUR0000SEMC01', 'CUUR0000SEMD01', 'CUUR0000SEMF01', 'CUUR0000SAH1']\n\nid_to_label = {\n    'CUUR0000SA0': 'All groups CPI',\n    'CUUR0000SA0L1E': 'All items less food and energy',\n    'CUUR0000SAF1': 'Food',\n    'CUUR0000SA0E': 'Energy',\n    'CUUR0000SETB01': 'Gasoline',\n    'CUUR0000SAM': 'Medical care',\n    'CUUR0000SEMC01': \"Physicians' services\",\n    'CUUR0000SEMD01': 'Hospital services',\n    'CUUR0000SEMF01': 'Prescription drugs',\n    'CUUR0000SAH1': 'Shelter'\n}"
+  },
+  {
+    "objectID": "data-pull.html#get-data",
+    "href": "data-pull.html#get-data",
+    "title": "BLS CPI Data Pull",
+    "section": "Get data",
+    "text": "Get data"
+  },
+  {
+    "objectID": "data-pull.html#create-data-frame",
+    "href": "data-pull.html#create-data-frame",
+    "title": "BLS CPI Data Pull",
+    "section": "Create data frame",
+    "text": "Create data frame\n\nwith open('/Users/ivelasq/Python/python-geospatial-maps/all_data_report.json', 'r') as f:\n    data = json.load(f)\n\nprint(\"Loaded JSON data\")\n\ndfs = [] \nfor key, series in data.items():\n    try:\n        series_data = series['Results']['series'][0]['data']\n        df_temp = pd.DataFrame(series_data)\n        df_temp['Category'] = key\n        dfs.append(df_temp)\n    except KeyError:\n        print(f\"Proper keys not found for: {key}\")\n\ndf = pd.concat(dfs, ignore_index=True)\n\ndf['Year-Month'] = df['year'] + '-' + df['period'].str[1:]\n\ndf['value'] = pd.to_numeric(df['value'], errors='coerce')\n\ndf['Category_Label'] = df['Category'].map(id_to_label)\n\nLoaded JSON data"
+  },
+  {
+    "objectID": "data-pull.html#save-as-a-pin",
+    "href": "data-pull.html#save-as-a-pin",
+    "title": "BLS CPI Data Pull",
+    "section": "Save as a pin",
+    "text": "Save as a pin\n\nconnect_server = \"https://colorado.posit.co/rsc\"\nconnect_api_key = os.environ.get('CONNECT_API_KEY')\n\n\nboard = board_connect(server_url=connect_server, api_key=connect_api_key)\n\nboard.pin_write(df, \"isabella.velasquez/bls-cpi-data\", type=\"csv\")\n\nWriting pin:\nName: 'isabella.velasquez/bls-cpi-data'\nVersion: 20231029T220946Z-0d98e\n\n\nMeta(title='bls-cpi-data: a pinned 689 x 11 DataFrame', description=None, created='20231029T220946Z', pin_hash='0d98edf1df9f46d8', file='bls-cpi-data.csv', file_size=121268, type='csv', api_version=1, version=VersionRaw(version='82569'), tags=None, name='isabella.velasquez/bls-cpi-data', user={}, local={})"
+  },
+  {
+    "objectID": "data-pull.html#transform-data",
+    "href": "data-pull.html#transform-data",
+    "title": "BLS CPI Data Pull",
+    "section": "Transform data",
+    "text": "Transform data\n\n# Ensure the 'Year-Month' column is in datetime format\ndf['Year-Month'] = pd.to_datetime(df['Year-Month'])\n\n# Filter the data for January 2018\njanuary_2018_data = df[(df['Year-Month'].dt.year == 2018) & (df['Year-Month'].dt.month == 1)]\n\n# Create a dictionary to map category labels to their January 2018 values\njanuary_2018_values = dict(zip(january_2018_data['Category_Label'], january_2018_data['value']))\n\n# Calculate the difference from the January 2018 values for each group\ndf['Difference_from_January_2018'] = df['Category_Label'].map(january_2018_values)\ndf['Difference_from_January_2018'] = df['value'] - df['Difference_from_January_2018']\n\n# Reset the index (optional)\ndf = df.reset_index(drop=True)"
+  },
+  {
+    "objectID": "index.html#row",
+    "href": "index.html#row",
+    "title": "inflation-dashboard",
+    "section": "Row",
+    "text": "Row"
+  }
+]
